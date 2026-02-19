@@ -1,0 +1,208 @@
+version: "3.9"
+
+networks:
+  media_net:
+    external: true
+
+services:
+
+  ##################################
+  # NGINX Reverse Proxy
+  ##################################
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - media_net
+
+  ##################################
+  # Jellyfin
+  ##################################
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kolkata
+    volumes:
+      - /mnt/hdd/docker/jellyfin:/config
+      - /mnt/hdd/media:/data
+    restart: unless-stopped
+    networks:
+      - media_net
+
+  mangal:
+    image: metafates/mangal
+    container_name: mangal
+    stdin_open: true
+    tty: true
+    working_dir: /manga
+    environment:
+      # --- Essential Path ---
+      - MANGAL_DOWNLOADER_PATH=/manga
+      
+      # --- Better Metadata & Visuals ---
+      - MANGAL_METADATA_FETCH_ANILIST=true      # Pulls high-res covers & info
+      - MANGAL_METADATA_COMIC_INFO_XML=true     # Embeds metadata for Komga/Kavita/Panels
+      - MANGAL_METADATA_SERIES_JSON=true        # Creates series info for modern readers
+      - MANGAL_DOWNLOADER_DOWNLOAD_COVER=true   # Saves cover.jpg automatically
+      
+      # --- Organization & Clean Naming ---
+      # This template makes chapters look like: [001] Chapter Title.cbz
+      - MANGAL_DOWNLOADER_CHAPTER_NAME_TEMPLATE=[{padded-index}] {chapter}
+      - MANGAL_DOWNLOADER_CREATE_MANGA_DIR=true # Puts each series in its own folder
+      - MANGAL_FORMATS_USE=cbz                  # Best format for manga readers
+      
+      # --- Performance & Quality of Life ---
+      - MANGAL_DOWNLOADER_ASYNC=true            # Significantly faster downloads
+      - MANGAL_DOWNLOADER_READ_DOWNLOADED=true  # Won't re-download if file exists
+      - MANGAL_ICONS_VARIANT=plain              # Best for standard terminal compatibility
+      - MANGAL_SEARCH_SHOW_QUERY_SUGGESTIONS=true
+      
+    volumes:
+      - /mnt/hdd/media/manga:/manga
+      - /mnt/hdd/docker/mangal:/config
+    restart: unless-stopped
+  
+  kavita:
+    image: jvmilazz0/kavita:latest
+    container_name: kavita
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kolkata
+    volumes:
+      - /mnt/hdd/docker/kavita/config:/kavita/config
+      - /mnt/hdd/media/manga:/manga
+    restart: unless-stopped
+    networks:
+      - media_net
+
+  ##################################
+  # qBittorrent
+  ##################################
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kolkata
+      - WEBUI_HOST=0.0.0.0
+      - WEBUI_PORT=8080
+    volumes:
+      - /mnt/hdd/docker/qbittorrent:/config
+      - /mnt/hdd/media:/data
+    restart: unless-stopped
+    networks:
+      - media_net
+
+  ##################################
+  # Sonarr
+  ##################################
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kolkata
+    volumes:
+      - /mnt/hdd/docker/sonarr:/config
+      - /mnt/hdd/media:/data
+    restart: unless-stopped
+    networks:
+      - media_net
+
+  ##################################
+  # Radarr
+  ##################################
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kolkata
+    volumes:
+      - /mnt/hdd/docker/radarr:/config
+      - /mnt/hdd/media:/data
+    restart: unless-stopped
+    networks:
+      - media_net
+
+  ##################################
+  # Prowlarr
+  ##################################
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Kolkata
+    volumes:
+      - /mnt/hdd/docker/prowlarr:/config
+    restart: unless-stopped
+    networks:
+      - media_net
+
+  ##################################
+  # AdGuard Home
+  ##################################
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: adguard
+    restart: unless-stopped
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "3001:3000"
+    volumes:
+      - ./adguard/work:/opt/adguardhome/work
+      - ./adguard/conf:/opt/adguardhome/conf
+    networks:
+      - media_net
+
+  teemii-backend:
+    image: dokkaner/teemii-backend:latest
+    container_name: teemii-backend
+    volumes:
+      - /mnt/hdd/media/manga:/data
+    environment:
+      - EXPRESS_PORT=3000
+      - SOCKET_IO_PORT=1555
+    networks:
+      - media_net
+    restart: unless-stopped
+
+  teemii-frontend:
+    image: dokkaner/teemii-frontend:latest
+    container_name: teemii-frontend
+    environment:
+      - VITE_APP_TITLE=Teemii
+      - VITE_APP_PORT=80
+    networks:
+      - media_net
+    depends_on:
+      - teemii-backend
+    restart: unless-stopped
+
+  komga:
+    image: gotson/komga:latest
+    container_name: komga
+    user: "1000:1000"
+    volumes:
+      - /mnt/hdd/docker/komga/config:/config
+      - /mnt/hdd/media/manga:/data
+    environment:
+      - TZ=Asia/Kolkata
+    networks:
+      - media_net
+    restart: unless-stopped
