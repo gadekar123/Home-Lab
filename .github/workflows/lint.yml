@@ -1,0 +1,19 @@
+name: Docker Compose Lint
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      # This runs the job 3 times in parallel
+      matrix:
+        stack: [media-stack, monitoring]
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate ${{ matrix.stack }} Compose Syntax
+        run: |
+          cd ${{ matrix.stack }}
+          docker compose config -q
