@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # 1. Check for Docker Image updates
+  - package-ecosystem: "docker"
+    directory: "/media-stack" # Folder where your media docker-compose lives
+    schedule:
+      interval: "weekly" # Check every week (prevents notification spam)
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # 2. Check for Monitoring updates
+  - package-ecosystem: "docker"
+    directory: "/monitoring" # Folder where your prometheus docker-compose lives
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
