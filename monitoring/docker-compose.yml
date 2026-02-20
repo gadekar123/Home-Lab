@@ -80,3 +80,35 @@ services:
       resources:
         limits:
           memory: 500m
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    restart: unless-stopped
+    networks:
+      - media_net
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+
+  gotify:
+    image: gotify/server:latest
+    container_name: gotify
+    restart: unless-stopped
+    networks:
+      - media_net
+    ports:
+      - "8088:80"
+    volumes:
+      - ./gotify-data:/app/data
+
+  alertmanager_gotify_bridge:
+    image: druggeri/alertmanager_gotify_bridge:latest
+    container_name: alertmanager_gotify_bridge
+    restart: unless-stopped
+    networks:
+      - media_net
+    environment:
+      - GOTIFY_TOKEN=${GOTIFY_TOKEN}
+      - GOTIFY_ENDPOINT=http://gotify:80/message

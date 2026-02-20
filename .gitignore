@@ -3,3 +3,6 @@
 **/teemii/
 
 .env
+
+**/grafana-data/
+**/prometheus-data/
