@@ -21,6 +21,11 @@ services:
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
       - '--collector.hwmon'
+    deploy:
+      resources:
+        limits:
+          memory: 200m
+
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
@@ -32,6 +37,10 @@ services:
       - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
+    deploy:
+      resources:
+        limits:
+          memory: 300m
 
   prometheus:
     image: prom/prometheus:latest
@@ -39,10 +48,21 @@ services:
     restart: unless-stopped
     networks:
       - media_net
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus-data:/prometheus
+      - ./alerts:/etc/prometheus/alerts
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
 
   grafana:
     image: grafana/grafana:latest
@@ -53,7 +73,10 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - grafana-storage:/var/lib/grafana
-
-volumes:
-  grafana-storage:
+      - ./grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 500m
