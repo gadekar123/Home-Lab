@@ -115,3 +115,26 @@ services:
     environment:
       - GOTIFY_TOKEN=${GOTIFY_TOKEN}
       - GOTIFY_ENDPOINT=http://gotify:80/message
+
+  loki:
+    image: grafana/loki:2.9.6
+    container_name: loki
+    restart: unless-stopped
+    networks:
+      - media_net
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yaml
+      - ./loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+  
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: promtail
+    restart: unless-stopped
+    networks:
+      - media_net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
