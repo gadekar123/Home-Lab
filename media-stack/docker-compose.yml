@@ -17,6 +17,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/static:/usr/share/nginx/html
     networks:
       - media_net
 
@@ -69,20 +70,6 @@ services:
       - /mnt/hdd/media/manga:/manga
       - /mnt/hdd/docker/mangal:/config
     restart: unless-stopped
-  
-  kavita:
-    image: jvmilazz0/kavita:latest
-    container_name: kavita
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Asia/Kolkata
-    volumes:
-      - /mnt/hdd/docker/kavita/config:/kavita/config
-      - /mnt/hdd/media/manga:/manga
-    restart: unless-stopped
-    networks:
-      - media_net
 
   ##################################
   # qBittorrent
@@ -169,30 +156,6 @@ services:
       - ./adguard/conf:/opt/adguardhome/conf
     networks:
       - media_net
-
-  teemii-backend:
-    image: dokkaner/teemii-backend:latest
-    container_name: teemii-backend
-    volumes:
-      - /mnt/hdd/media/manga:/data
-    environment:
-      - EXPRESS_PORT=3000
-      - SOCKET_IO_PORT=1555
-    networks:
-      - media_net
-    restart: unless-stopped
-
-  teemii-frontend:
-    image: dokkaner/teemii-frontend:latest
-    container_name: teemii-frontend
-    environment:
-      - VITE_APP_TITLE=Teemii
-      - VITE_APP_PORT=80
-    networks:
-      - media_net
-    depends_on:
-      - teemii-backend
-    restart: unless-stopped
 
   komga:
     image: gotson/komga:latest
