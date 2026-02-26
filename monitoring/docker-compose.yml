@@ -117,7 +117,7 @@ services:
       - GOTIFY_ENDPOINT=http://gotify:80/message
 
   loki:
-    image: grafana/loki:2.9.6
+    image: grafana/loki:3.6.7
     container_name: loki
     restart: unless-stopped
     networks:
